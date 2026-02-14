@@ -10,7 +10,7 @@ Usage:
         --total-skills 30 --total-edges 45 \
         [--skipped-phases "audit,publish"] \
         [--errors "optimize:timeout on skill-foo,publish:git auth failed"] \
-        [-o ~/Downloads/lifecycle-report-20260212.md]
+        [-o ~/Claude/skills/skill-lifecycle/lifecycle-report-20260212.md]
 """
 
 import argparse

@@ -19,14 +19,14 @@ the Task tool, running sequentially with user checkpoints.
 ## Pipeline Overview
 
 ```
-┌─────────┐     ┌──────────┐     ┌─────────┐     ┌─────────┐     ┌────────┐
-│  Audit  │ ──► │ Optimize │ ──► │ Publish │ ──► │ Catalog │ ──► │ Report │
-│ curator │     │ optimizer│     │publisher│     │ catalog │     │ summary│
-└─────────┘     └──────────┘     └─────────┘     └─────────┘     └────────┘
-      │               │
-      ▼               │
- [User checkpoint:    │
-  approve/skip]  ◄────┘
+┌─────────┐     ┌────────┐     ┌──────────┐     ┌─────────┐     ┌─────────┐     ┌────────┐
+│  Audit  │ ──► │  Test  │ ──► │ Optimize │ ──► │ Publish │ ──► │ Catalog │ ──► │ Report │
+│ curator │     │ tester │     │ optimizer│     │publisher│     │ catalog │     │ summary│
+└─────────┘     └────────┘     └──────────┘     └─────────┘     └─────────┘     └────────┘
+      │                              │
+      ▼                              │
+ [User checkpoint:                   │
+  approve/skip]  ◄───────────────────┘
 ```
 
 **Phases map to sub-skills:**
@@ -34,17 +34,19 @@ the Task tool, running sequentially with user checkpoints.
 | Phase | Sub-Skill | What It Does |
 |-------|-----------|--------------|
 | Audit | `skill-curator` | Scan for overlaps, run 3-agent panel, recommend merges/splits |
+| Test | `skill-tester` | Validate structure, dependencies, syntax, runtime, and scenarios |
 | Optimize | `skill-optimizer` | Review flagged skills, gather evidence, apply targeted updates |
 | Publish | `skill-publisher` | Push to GitHub, generate READMEs, create logos |
-| Catalog | `skill-catalog` | Extract metadata, build relationship graph, generate HTML viewer |
+| Catalog | `skill-catalog` + `skill-graph` | Extract metadata, build relationship graph, generate HTML viewer |
 | Report | (built-in) | Summarize all changes across the pipeline |
 
 ## Prerequisites
 
-All four sub-skills must be installed:
+All five sub-skills must be installed:
 
 ```bash
 ls ~/.claude/skills/skill-curator/SKILL.md \
+   ~/.claude/skills/skill-tester/SKILL.md \
    ~/.claude/skills/skill-optimizer/SKILL.md \
    ~/.claude/skills/skill-publisher/SKILL.md \
    ~/.claude/skills/skill-catalog/SKILL.md
@@ -56,12 +58,12 @@ If any are missing, inform the user and skip that phase (do not fail the entire 
 
 ### Phase 0: Initialize
 
-1. **Verify sub-skills** — Check that all four sub-skill directories exist
+1. **Verify sub-skills** — Check that all five sub-skill directories exist (+ skill-graph for Catalog)
 2. **Create run log** — Initialize a tracking structure to record results from each phase:
 
 ```
 Run ID: lifecycle-YYYYMMDD-HHMMSS
-Phases: [audit, optimize, publish, catalog]
+Phases: [audit, test, optimize, publish, catalog]
 Results: {}
 Errors: {}
 ```
@@ -71,15 +73,16 @@ Errors: {}
 ```markdown
 ## Skill Lifecycle Run
 
-Pipeline: Audit → Optimize → Publish → Catalog → Report
+Pipeline: Audit → Test → Optimize → Publish → Catalog → Report
 
 | Phase | Sub-Skill | Status |
 |-------|-----------|--------|
 | 1. Audit | skill-curator | Pending |
-| 2. Optimize | skill-optimizer | Pending |
-| 3. Publish | skill-publisher | Pending |
-| 4. Catalog | skill-catalog | Pending |
-| 5. Report | lifecycle_report.py | Pending |
+| 2. Test | skill-tester | Pending |
+| 3. Optimize | skill-optimizer | Pending |
+| 4. Publish | skill-publisher | Pending |
+| 5. Catalog | skill-catalog + skill-graph | Pending |
+| 6. Report | lifecycle_report.py | Pending |
 
 Proceed? (y/n, or skip phases with: "skip audit", "skip publish", etc.)
 ```
@@ -128,12 +131,47 @@ Output format — return a structured summary:
    - `skills_retired`: list of retired skills
    - `clusters_skipped`: list of clusters the user declined
 
-### Phase 2: Optimize (skill-optimizer)
+### Phase 2: Test (skill-tester)
 
-Determine which skills need optimization. Candidates come from two sources:
+Validate all skills (or those modified in Phase 1) for structural and runtime correctness.
+
+**Delegate via Task tool:**
+
+```
+Use the /skill-tester skill to validate the following skills: [list]
+
+Steps:
+1. Run: python3 ~/.claude/skills/skill-tester/scripts/scan_env.py
+2. For each skill, run T1–T4 automated checks (dependency, syntax, consistency, runtime)
+3. Dispatch T5 scenario tests in parallel batches of 6
+4. Aggregate results with gen_report.py
+
+Output format — return:
+- total_tested: number
+- passed: list of skill names
+- partial: list of {name, issues}
+- failed: list of {name, issues}
+```
+
+**After the test completes:**
+
+1. Present the PASS/PARTIAL/FAIL table to the user
+2. Skills with FAIL become candidates for Phase 3 (Optimize)
+3. Auto-fixable issues (missing deps, stale refs) can be fixed immediately
+
+Record results:
+- `skills_passed`: list of skills that passed all checks
+- `skills_partial`: list of skills with warnings
+- `skills_failed`: list of skills with hard failures
+- `auto_fixed`: list of issues fixed automatically
+
+### Phase 3: Optimize (skill-optimizer)
+
+Determine which skills need optimization. Candidates come from three sources:
 
 1. **Skills modified in Phase 1** — Newly merged or split skills need a quality check
-2. **Skills with observations.md** — Previously deferred findings that may now have enough evidence
+2. **Skills that FAILED or PARTIAL in Phase 2** — Test failures that need content fixes
+3. **Skills with observations.md** — Previously deferred findings that may now have enough evidence
 
 Discover candidates:
 
@@ -173,7 +211,7 @@ Record results:
 - `skills_unchanged`: list of skills reviewed but not changed
 - `total_changes`: count of all changes applied
 
-### Phase 3: Publish (skill-publisher)
+### Phase 4: Publish (skill-publisher)
 
 Publish all skills that were modified in Phases 1 or 2.
 
@@ -205,7 +243,7 @@ Record results:
 - `logos_generated`: count
 - `publish_failures`: list of any failures
 
-### Phase 4: Catalog (skill-catalog)
+### Phase 5: Catalog (skill-catalog + skill-graph)
 
 Regenerate the full catalog and interactive graph to reflect all changes.
 
@@ -237,7 +275,7 @@ Record results:
 - `catalog_path`: path to JSON export
 - `viewer_path`: path to HTML viewer
 
-### Phase 5: Report
+### Phase 6: Report
 
 Generate the final lifecycle report summarizing all phases.
 
@@ -267,7 +305,8 @@ Each phase is wrapped in error recovery logic. If a phase fails:
 
 | If This Fails... | Then... |
 |-------------------|---------|
-| Audit | Optimize still runs (uses observations.md as candidates instead) |
+| Audit | Test still runs (tests all skills instead of just modified ones) |
+| Test | Optimize still runs (uses observations.md as candidates instead) |
 | Optimize | Publish still runs (publishes whatever was changed in Audit) |
 | Publish | Catalog still runs (catalog reflects local state, not GitHub state) |
 | Catalog | Report still runs (reports on earlier phases without catalog stats) |
@@ -281,6 +320,7 @@ The report includes a retry section for any failed phases:
 
 To retry failed phases individually:
 - Audit: `/skill-curator`
+- Test: `/skill-tester`
 - Optimize: `/skill-optimizer [skill-name]`
 - Publish: `/skill-publisher --all`
 - Catalog: `/skill-catalog`
@@ -307,6 +347,7 @@ At the Phase 0 prompt, say:
 
 For individual phases, use the sub-skill directly:
 - Audit only: `/skill-curator`
+- Test only: `/skill-tester`
 - Optimize only: `/skill-optimizer`
 - Publish only: `/skill-publisher --all`
 - Catalog only: `/skill-catalog`
