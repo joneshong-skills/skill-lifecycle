@@ -301,9 +301,9 @@ python3 ~/.claude/skills/skill-lifecycle/scripts/lifecycle_report.py \
 
 Present the report to the user and provide the file path.
 
-> **Sandbox acceleration**: Final report generation benefits from `sandbox_execute`.
+> **Sandbox limitation**: `sandbox_execute` cannot access `~/.claude/` (path whitelist: `~/Claude/` + `/tmp/`). Final report generation must run via `Bash` instead.
 >
-> Preferred (Sandbox):
+> Non-functional (sandbox path blocked) — use Bash instead:
 > ```python
 > import sys; sys.path.insert(0, '/Users/joneshong/.claude/skills/skill-lifecycle/scripts')
 > import lifecycle_report
@@ -387,12 +387,17 @@ For individual phases, use the sub-skill directly:
 
 ## Sandbox Optimization
 
-This skill is **sandbox-optimized**. Batch operations run inside `sandbox_execute`:
+This skill **cannot use sandbox** for its primary operations (`~/.claude/` path is outside sandbox whitelist `~/Claude/` + `/tmp/`). Use `Bash` to run scripts:
 
-- **Lifecycle report generation**: Import `scripts/lifecycle_report.py` in sandbox to compile all phase results and render the markdown report in one call
-- **Sub-skill prerequisite check**: Scan all five sub-skill directories in sandbox to verify installation before pipeline starts
+- **Lifecycle report generation**: Run via Bash: `python3 ~/.claude/skills/skill-lifecycle/scripts/lifecycle_report.py` — compile all phase results and render the markdown report in one call
+- **Sub-skill prerequisite check**: Run via Bash to scan all five sub-skill directories and verify installation before pipeline starts
 
 Principle: **Deterministic batch work → sandbox; reasoning/presentation → LLM.**
+
+
+## Integration
+
+- **synergy-weaver** — Integration audit is part of the skill lifecycle pipeline
 
 ## Continuous Improvement
 
