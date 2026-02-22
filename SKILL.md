@@ -301,9 +301,9 @@ python3 ~/.claude/skills/skill-lifecycle/scripts/lifecycle_report.py \
 
 Present the report to the user and provide the file path.
 
-> **Sandbox limitation**: `sandbox_execute` cannot access `~/.claude/` (path whitelist: `~/Claude/` + `/tmp/`). Final report generation must run via `Bash` instead.
+> **Sandbox acceleration**: Final report generation runs in `sandbox_execute` — `~/.claude/` imports are now supported.
 >
-> Non-functional (sandbox path blocked) — use Bash instead:
+> Preferred (Sandbox):
 > ```python
 > import sys; sys.path.insert(0, '/Users/joneshong/.claude/skills/skill-lifecycle/scripts')
 > import lifecycle_report
@@ -387,10 +387,13 @@ For individual phases, use the sub-skill directly:
 
 ## Sandbox Optimization
 
-This skill **cannot use sandbox** for its primary operations (`~/.claude/` path is outside sandbox whitelist `~/Claude/` + `/tmp/`). Use `Bash` to run scripts:
+This skill is **sandbox-optimized**. Batch operations run inside `sandbox_execute`:
 
-- **Lifecycle report generation**: Run via Bash: `python3 ~/.claude/skills/skill-lifecycle/scripts/lifecycle_report.py` — compile all phase results and render the markdown report in one call
-- **Sub-skill prerequisite check**: Run via Bash to scan all five sub-skill directories and verify installation before pipeline starts
+- **Lifecycle report generation**: Import `scripts/lifecycle_report.py` in sandbox to compile all phase results and render the markdown report in one call
+- **Sub-skill prerequisite check**: Import `scripts/` in sandbox to scan all five sub-skill directories and verify installation before pipeline starts
+
+Fallback (Bash):
+- `python3 ~/.claude/skills/skill-lifecycle/scripts/lifecycle_report.py` — generate report via Bash when sandbox is unavailable
 
 Principle: **Deterministic batch work → sandbox; reasoning/presentation → LLM.**
 
