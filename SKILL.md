@@ -5,8 +5,8 @@ description: >-
   "skill lifecycle", "maintain skills", "skill 維護", "skill 生命週期",
   "定期整理 skill", mentions skill maintenance automation, or discusses
   running the full skill curation → optimization → publishing → catalog pipeline.
-version: 0.1.0
-tools: Task, Read, Write, Glob, Bash
+version: 0.2.0
+tools: Task, Read, Write, Glob, Bash, sandbox_execute
 ---
 
 # Skill Lifecycle
@@ -15,6 +15,14 @@ Orchestrate the full skill maintenance pipeline: audit inventory for redundancie
 optimize flagged skills, publish updates to GitHub, and regenerate the catalog with
 interactive graph visualization. Each phase delegates to a specialized sub-skill via
 the Task tool, running sequentially with user checkpoints.
+
+## Agent Delegation
+
+Delegate version tracking and status scanning to `explorer` agent.
+
+```
+explorer (Haiku, maxTurns=10, tools: Read, Grep, Glob)
+```
 
 ## Pipeline Overview
 
@@ -293,6 +301,22 @@ python3 ~/.claude/skills/skill-lifecycle/scripts/lifecycle_report.py \
 
 Present the report to the user and provide the file path.
 
+> **Sandbox acceleration**: Final report generation benefits from `sandbox_execute`.
+>
+> Preferred (Sandbox):
+> ```python
+> import sys; sys.path.insert(0, '/Users/joneshong/.claude/skills/skill-lifecycle/scripts')
+> import lifecycle_report
+> report = lifecycle_report.generate(run_id='lifecycle-YYYYMMDD-HHMMSS', **phase_results)
+> output(report)
+> ```
+>
+> Fallback (Bash):
+> ```bash
+> python3 ~/.claude/skills/skill-lifecycle/scripts/lifecycle_report.py \
+>   --run-id "lifecycle-YYYYMMDD-HHMMSS" [phase flags] -o ~/Claude/skill-lifecycle/report.md
+> ```
+
 ## Error Handling
 
 Each phase is wrapped in error recovery logic. If a phase fails:
@@ -360,6 +384,15 @@ For individual phases, use the sub-skill directly:
 | After major skill edits | Optimize → Publish → Catalog |
 | Weekly (if actively building) | Full pipeline |
 | Monthly (maintenance mode) | Full pipeline |
+
+## Sandbox Optimization
+
+This skill is **sandbox-optimized**. Batch operations run inside `sandbox_execute`:
+
+- **Lifecycle report generation**: Import `scripts/lifecycle_report.py` in sandbox to compile all phase results and render the markdown report in one call
+- **Sub-skill prerequisite check**: Scan all five sub-skill directories in sandbox to verify installation before pipeline starts
+
+Principle: **Deterministic batch work → sandbox; reasoning/presentation → LLM.**
 
 ## Continuous Improvement
 
