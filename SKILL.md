@@ -305,7 +305,7 @@ Present the report to the user and provide the file path.
 >
 > Preferred (Sandbox):
 > ```python
-> import sys; sys.path.insert(0, '/Users/joneshong/.claude/skills/skill-lifecycle/scripts')
+> import os, sys; sys.path.insert(0, os.path.expanduser('~/.claude/skills/skill-lifecycle/scripts'))
 > import lifecycle_report
 > report = lifecycle_report.generate(run_id='lifecycle-YYYYMMDD-HHMMSS', **phase_results)
 > output(report)
