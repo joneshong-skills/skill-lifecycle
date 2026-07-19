@@ -1,12 +1,9 @@
 ---
 name: skill-lifecycle
-description: >-
-  This skill should be used when the user asks to "run skill maintenance",
-  "skill lifecycle", "maintain skills", "skill 維護", "skill 生命週期",
-  "定期整理 skill", mentions skill maintenance automation, or discusses
-  running the full skill curation → optimization → publishing → catalog pipeline.
+description: "lifecycle, run, maintenance, maintain, skills, skill 維護, skill 生命週期, 定期整理 skill"
 version: 0.2.0
 tools: Task, Read, Write, Glob, Bash, sandbox_execute
+disable-model-invocation: true
 ---
 
 # Skill Lifecycle
@@ -105,7 +102,7 @@ Wait for user confirmation. Parse any skip directives.
 Use the /skill-curator skill to perform a full skill inventory audit.
 
 Steps:
-1. Run the overlap analysis: python3 ~/.claude/skills/skill-curator/scripts/analyze.py --json
+1. Run the overlap analysis: ~/.local/bin/python3 ~/.claude/skills/skill-curator/scripts/analyze.py --json
 2. For each non-trivial cluster, run the 3-agent panel discussion (Consolidator, Preservationist, Synthesizer)
 3. Present the recommendation table
 
@@ -149,7 +146,7 @@ Validate all skills (or those modified in Phase 1) for structural and runtime co
 Use the /skill-tester skill to validate the following skills: [list]
 
 Steps:
-1. Run: python3 ~/.claude/skills/skill-tester/scripts/scan_env.py
+1. Run: ~/.local/bin/python3 ~/.claude/skills/skill-tester/scripts/scan_env.py
 2. For each skill, run T1–T4 automated checks (dependency, syntax, consistency, runtime)
 3. Dispatch T5 scenario tests in parallel batches of 6
 4. Aggregate results with gen_report.py
@@ -261,9 +258,9 @@ Regenerate the full catalog and interactive graph to reflect all changes.
 Use the /skill-catalog skill to regenerate the full skill catalog and graph.
 
 Steps:
-1. Run: python3 ~/.claude/skills/skill-catalog/scripts/extract_catalog.py -o ~/Downloads/skill-catalog.json
-2. Run: python3 ~/.claude/skills/skill-graph/scripts/scan_skills.py --json -o ~/Downloads/skill-graph.json
-3. Run: python3 ~/.claude/skills/skill-catalog/scripts/generate_viewer.py \
+1. Run: ~/.local/bin/python3 ~/.claude/skills/skill-catalog/scripts/extract_catalog.py -o ~/Downloads/skill-catalog.json
+2. Run: ~/.local/bin/python3 ~/.claude/skills/skill-graph/scripts/scan_skills.py --json -o ~/Downloads/skill-graph.json
+3. Run: ~/.local/bin/python3 ~/.claude/skills/skill-catalog/scripts/generate_viewer.py \
      --graph ~/Downloads/skill-graph.json \
      --catalog ~/Downloads/skill-catalog.json \
      -o ~/Downloads/skill-graph-viewer.html
@@ -288,7 +285,7 @@ Record results:
 Generate the final lifecycle report summarizing all phases.
 
 ```bash
-python3 ~/.claude/skills/skill-lifecycle/scripts/lifecycle_report.py \
+~/.local/bin/python3 ~/.claude/skills/skill-lifecycle/scripts/lifecycle_report.py \
   --run-id "lifecycle-YYYYMMDD-HHMMSS" \
   --audit-merges N --audit-splits N --audit-retires N \
   --optimized N --unchanged N --changes N \
@@ -313,8 +310,8 @@ Present the report to the user and provide the file path.
 >
 > Fallback (Bash):
 > ```bash
-> python3 ~/.claude/skills/skill-lifecycle/scripts/lifecycle_report.py \
->   --run-id "lifecycle-YYYYMMDD-HHMMSS" [phase flags] -o ~/Claude/skill-lifecycle/report.md
+> ~/.local/bin/python3 ~/.claude/skills/skill-lifecycle/scripts/lifecycle_report.py \
+>   --run-id "lifecycle-YYYYMMDD-HHMMSS" [phase flags] -o ~/workshop/outputs/skill-lifecycle/report.md
 > ```
 
 ## Error Handling
@@ -393,7 +390,7 @@ This skill is **sandbox-optimized**. Batch operations run inside `sandbox_execut
 - **Sub-skill prerequisite check**: Import `scripts/` in sandbox to scan all five sub-skill directories and verify installation before pipeline starts
 
 Fallback (Bash):
-- `python3 ~/.claude/skills/skill-lifecycle/scripts/lifecycle_report.py` — generate report via Bash when sandbox is unavailable
+- `~/.local/bin/python3 ~/.claude/skills/skill-lifecycle/scripts/lifecycle_report.py` — generate report via Bash when sandbox is unavailable
 
 Principle: **Deterministic batch work → sandbox; reasoning/presentation → LLM.**
 
@@ -425,4 +422,4 @@ Accumulated lessons signal when to run `/skill-optimizer` for a deeper structura
 
 ### Scripts
 - **`scripts/lifecycle_report.py`** — Generate markdown summary report from pipeline results.
-  Usage: `python3 lifecycle_report.py --run-id ID [phase flags] [-o OUTPUT]`
+  Usage: `~/.local/bin/python3 lifecycle_report.py --run-id ID [phase flags] [-o OUTPUT]`
