@@ -175,5 +175,5 @@ Fallback (Bash):
   --total-skills N --total-edges N \
   --skipped-phases "phase1,phase2" \
   --errors "phase:message,phase:message" \
-  -o ~/workshop/outputs/skill-lifecycle/report.md
+  -o ~/.claude/outputs/skill-lifecycle/report.md
 ```

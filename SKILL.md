@@ -311,7 +311,7 @@ Present the report to the user and provide the file path.
 > Fallback (Bash):
 > ```bash
 > ~/.local/bin/python3 ~/.claude/skills/skill-lifecycle/scripts/lifecycle_report.py \
->   --run-id "lifecycle-YYYYMMDD-HHMMSS" [phase flags] -o ~/workshop/outputs/skill-lifecycle/report.md
+>   --run-id "lifecycle-YYYYMMDD-HHMMSS" [phase flags] -o ~/.claude/outputs/skill-lifecycle/report.md
 > ```
 
 ## Error Handling
