@@ -34,29 +34,7 @@ After audit completes, present recommendations with checkpoint options:
 
 Record: `skills_merged`, `skills_split`, `skills_retired`, `clusters_skipped`.
 
-## Phase 2: Test (skill-tester)
-
-```
-Use the /skill-tester skill to validate the following skills: [list]
-
-Steps:
-1. Run: ~/.local/bin/python3 ~/.claude/skills/skill-tester/scripts/scan_env.py
-2. For each skill, run T1–T4 automated checks (dependency, syntax, consistency, runtime)
-3. Dispatch T5 scenario tests in parallel batches of 6
-4. Aggregate results with gen_report.py
-
-Output format — return:
-- total_tested: number
-- passed: list of skill names
-- partial: list of {name, issues}
-- failed: list of {name, issues}
-```
-
-Skills with FAIL become candidates for Phase 4 (Optimize). Auto-fixable issues (missing deps, stale refs) can be fixed immediately.
-
-Record: `skills_passed`, `skills_partial`, `skills_failed`, `auto_fixed`.
-
-## Phase 3: Security (skill-security-scan)
+## Phase 2: Security (skill-security-scan)
 
 ```bash
 ~/.local/bin/python3 ~/.claude/skills/skill-security-scan/scripts/security-scan.py --batch --json
@@ -72,7 +50,7 @@ BLOCKED skills do NOT proceed to Optimize or Publish.
 
 Record: `skills_clean`, `skills_warned`, `skills_blocked`.
 
-## Phase 4: Optimize (skill-optimizer)
+## Phase 3: Optimize (skill-optimizer)
 
 Candidate discovery:
 
@@ -108,7 +86,7 @@ Runs **sequentially** — each skill one at a time.
 
 Record: `skills_optimized`, `skills_unchanged`, `total_changes`.
 
-## Phase 5: Publish (skill-publisher)
+## Phase 4: Publish (skill-publisher)
 
 ```
 Use the /skill-publisher skill to publish the following skills: [list]
@@ -129,19 +107,19 @@ Output format — return:
 
 Record: `repos_created`, `repos_updated`, `readmes_generated`, `logos_generated`, `publish_failures`.
 
-## Phase 6: Catalog (skill-catalog + skill-graph)
+## Phase 5: Catalog (skill-catalog + skill-graph)
 
 ```
 Use the /skill-catalog skill to regenerate the full skill catalog and graph.
 
 Steps:
-1. Run: ~/.local/bin/python3 ~/.claude/skills/skill-catalog/scripts/extract_catalog.py -o ~/Downloads/skill-catalog.json
-2. Run: ~/.local/bin/python3 ~/.claude/skills/skill-graph/scripts/scan_skills.py --json -o ~/Downloads/skill-graph.json
+1. Run: ~/.local/bin/python3 ~/.claude/skills/skill-catalog/scripts/extract_catalog.py -o ~/workshop/outputs/skill-lifecycle/skill-catalog.json
+2. Run: ~/.local/bin/python3 ~/.claude/skills/skill-graph/scripts/scan_skills.py --json -o ~/workshop/outputs/skill-lifecycle/skill-graph.json
 3. Run: ~/.local/bin/python3 ~/.claude/skills/skill-catalog/scripts/generate_viewer.py \
-     --graph ~/Downloads/skill-graph.json \
-     --catalog ~/Downloads/skill-catalog.json \
-     -o ~/Downloads/skill-graph-viewer.html
-4. Open the viewer: open ~/Downloads/skill-graph-viewer.html
+     --graph ~/workshop/outputs/skill-lifecycle/skill-graph.json \
+     --catalog ~/workshop/outputs/skill-lifecycle/skill-catalog.json \
+     -o ~/workshop/outputs/skill-lifecycle/skill-graph-viewer.html
+4. Open the viewer: open ~/workshop/outputs/skill-lifecycle/skill-graph-viewer.html
 
 Output format — return:
 - total_skills: number
@@ -153,7 +131,7 @@ Output format — return:
 
 Record: `total_skills`, `total_edges`, `catalog_path`, `viewer_path`.
 
-## Phase 7: Report
+## Phase 6: Report
 
 Preferred (Sandbox):
 ```python
@@ -168,7 +146,6 @@ Fallback (Bash):
 ~/.local/bin/python3 ~/.claude/skills/skill-lifecycle/scripts/lifecycle_report.py \
   --run-id "lifecycle-YYYYMMDD-HHMMSS" \
   --audit-merges N --audit-splits N --audit-retires N \
-  --tested N --test-passed N --test-partial N --test-failed N \
   --sec-clean N --sec-warned N --sec-blocked N \
   --optimized N --unchanged N --changes N \
   --published N --repos-created N --readmes N --logos N \
