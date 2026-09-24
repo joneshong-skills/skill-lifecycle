@@ -188,17 +188,15 @@ Publish all skills that were modified in Phases 1 or 2.
 Use the /skill-publisher skill to publish the following skills: [list]
 
 For each skill:
-1. Generate/update README.md and README.zh-TW.md
+1. Generate/update README.md and README.zh.md
 2. Generate logo if missing (use /image-gen)
 3. Push to GitHub under joneshong-skills org
-4. Trigger DeepWiki indexing
 
 Use --scan first to show current publish status, then process only the modified skills.
 
 Output format — return:
 - skills_published: list of {name, repo_url, readme_generated, logo_generated}
 - skills_failed: list of {name, error}
-- deepwiki_indexed: list of skill names
 ```
 
 If no skills were modified in earlier phases, skip this phase and note it in the report.
@@ -260,7 +258,7 @@ Generate the final lifecycle report summarizing all phases.
 
 Present the report to the user and provide the file path.
 
-> **Sandbox acceleration**: Final report generation runs in `sandbox_execute` — `~/.claude/` imports are now supported.
+> **Sandbox acceleration**: Final report generation runs in `sandbox_execute`, which can import from `~/.claude/`.
 >
 > Preferred (Sandbox):
 > ```python
@@ -273,7 +271,7 @@ Present the report to the user and provide the file path.
 > Fallback (Bash):
 > ```bash
 > ~/.local/bin/python3 ~/.claude/skills/skill-lifecycle/scripts/lifecycle_report.py \
->   --run-id "lifecycle-YYYYMMDD-HHMMSS" [phase flags] -o ~/.claude/outputs/skill-lifecycle/report.md
+>   --run-id "lifecycle-YYYYMMDD-HHMMSS" [phase flags] -o ~/workshop/outputs/skill-lifecycle/report.md
 > ```
 
 ## Error Handling
@@ -353,10 +351,6 @@ Fallback (Bash):
 
 Principle: **Deterministic batch work → sandbox; reasoning/presentation → LLM.**
 
-
-## Integration
-
-- **synergy-weaver** — Integration audit is part of the skill lifecycle pipeline
 
 ## Continuous Improvement
 

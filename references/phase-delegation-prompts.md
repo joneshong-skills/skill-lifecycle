@@ -92,17 +92,15 @@ Record: `skills_optimized`, `skills_unchanged`, `total_changes`.
 Use the /skill-publisher skill to publish the following skills: [list]
 
 For each skill:
-1. Generate/update README.md and README.zh-TW.md
+1. Generate/update README.md and README.zh.md
 2. Generate logo if missing (use /image-gen)
 3. Push to GitHub under joneshong-skills org
-4. Trigger DeepWiki indexing
 
 Use --scan first to show current publish status, then process only the modified skills.
 
 Output format — return:
 - skills_published: list of {name, repo_url, readme_generated, logo_generated}
 - skills_failed: list of {name, error}
-- deepwiki_indexed: list of skill names
 ```
 
 Record: `repos_created`, `repos_updated`, `readmes_generated`, `logos_generated`, `publish_failures`.
