@@ -18,3 +18,8 @@
 - **Rule**: A pipeline skill means ALL phases run in order. The user invoking
   `/skill-lifecycle` means the FULL pipeline, not cherry-picking phases.
   If skipping is appropriate, present the plan first and let the user decide.
+
+### 2026-09-25 — Frozen sub-skills, a retired skill-graph, and a report that marks notes as failures
+- **Friction**: curator/optimizer/publisher all carry `disable-model-invocation: true`, so the "delegate via Task tool: use /skill-X" pattern cannot work — subagents cannot invoke them. `skill-graph` was archived 2026-08-26 but Phase 4 still calls its scan_skills.py. `lifecycle_report.py` reports a Security phase this SKILL.md does not have (0/0/0 shown as OK unless skipped), and `--errors` marks a phase FAILED and drops its metrics. `publish.py` skips the push at an empty `Proceed? [y/N]` and still exits 0.
+- **Fix**: ran each sub-skill from the main thread by reading its SKILL.md; panels went to general-purpose agents with self-contained prompts. Phase 4 used `~/.claude/skills-archive/skill-graph-20260826/scripts/scan_skills.py`. Report regenerated with `--skipped-phases security` and no `--errors`; notes appended by hand. Push confirmed with `printf 'y\n' |` and checked by `git fetch` + `status -sb`.
+- **Rule**: before a run, check sub-skill flags and every script path in Phase 0; confirm each push against the remote, not publish.py's exit code.
