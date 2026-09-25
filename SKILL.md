@@ -261,6 +261,19 @@ Generate the final lifecycle report summarizing all phases.
 such as a workaround or a manual step, gets `--note` instead. It keeps the phase OK and its numbers,
 and it can repeat.
 
+**Record the run in Anvil.** The markdown report alone leaves no trace in the lifecycle history the
+weekly cron writes to. Write the phase results to a JSON file next to the report and post it:
+
+```bash
+~/.local/bin/python3 ~/.claude/skills/skill-lifecycle/scripts/post_run.py \
+  ~/workshop/outputs/skill-lifecycle/<run-id>/anvil-run.json
+```
+
+Required keys: `trigger` (`manual`), `status`, `completed_at`, and `phases`, which is per-phase
+results plus `run` (local run id, real start time, report path; Anvil stamps its own run id and
+start time). Optional keys: `skipped_phases`, `total_skills`, `optimized`, `changes_applied`, and
+`errors`. A non-zero exit means nothing was recorded. Report that exit, not the markdown.
+
 Present the report to the user and provide the file path.
 
 > **Sandbox acceleration**: Final report generation runs in `sandbox_execute`, which can import from `~/.claude/`.
