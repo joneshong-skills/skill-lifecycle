@@ -5,6 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "lifecycle_report.py"
 
 
@@ -71,3 +73,21 @@ def test_generate_accepts_notes():
     )
     assert "verified remote" in text
     assert status_row(text, "Publish").endswith("| OK |")
+
+
+@pytest.mark.parametrize("bad", ["publsh:typo in the phase", "no colon at all"])
+def test_a_malformed_note_is_rejected(bad):
+    r = subprocess.run(
+        [sys.executable, str(SCRIPT), "--run-id", "t", "--note", bad],
+        capture_output=True, text=True, check=False,
+    )
+    assert r.returncode != 0
+    assert "--note needs" in r.stderr
+
+
+def test_generate_takes_a_single_note_string():
+    sys.path.insert(0, str(SCRIPT.parent))
+    import lifecycle_report
+
+    text = lifecycle_report.generate(run_id="t", note="catalog:one caveat")
+    assert "- **Catalog:** one caveat" in text

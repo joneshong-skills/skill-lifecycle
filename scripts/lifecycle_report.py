@@ -48,6 +48,24 @@ def parse_list(raw: Optional[str]) -> List[str]:
     return [x.strip() for x in raw.split(",") if x.strip()]
 
 
+PHASES = ("audit", "optimize", "publish", "catalog")
+
+
+def parse_notes(raw_notes) -> dict:
+    """'phase:message' entries grouped by phase. A typo in the phase name or a
+    missing colon raises instead of printing a note no phase owns."""
+    if isinstance(raw_notes, str):
+        raw_notes = [raw_notes]
+    notes = {}
+    for raw in raw_notes or []:
+        phase, sep, message = raw.partition(":")
+        phase = phase.strip()
+        if not sep or phase not in PHASES:
+            raise ValueError(f"--note needs 'phase:message' with phase in {', '.join(PHASES)}: {raw!r}")
+        notes.setdefault(phase, []).append(message.strip())
+    return notes
+
+
 def phase_status_emoji(phase: str, skipped: List[str], errors: Dict[str, str]) -> str:
     """Return a status indicator for each phase."""
     if phase in skipped:
@@ -61,10 +79,7 @@ def build_report(args: argparse.Namespace) -> str:
     """Build the full markdown report."""
     skipped = parse_list(args.skipped_phases)
     errors = dict(parse_key_value_list(args.errors))
-    notes = {}
-    for raw in args.note or []:
-        phase, _, message = raw.partition(":")
-        notes.setdefault(phase.strip(), []).append(message.strip())
+    notes = parse_notes(args.note)
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     lines = []
@@ -302,7 +317,10 @@ def main():
     parser.add_argument("-o", "--output", help="Output file path (default: stdout)")
 
     args = parser.parse_args()
-    report = build_report(args)
+    try:
+        report = build_report(args)
+    except ValueError as e:
+        parser.error(str(e))
 
     if args.output:
         output_path = Path(args.output).expanduser()
