@@ -105,14 +105,14 @@ Output format — return:
 
 Record: `repos_created`, `repos_updated`, `readmes_generated`, `logos_generated`, `publish_failures`.
 
-## Phase 5: Catalog (skill-catalog + skill-graph)
+## Phase 5: Catalog (skill-catalog)
 
 ```
 Use the /skill-catalog skill to regenerate the full skill catalog and graph.
 
 Steps:
 1. Run: ~/.local/bin/python3 ~/.claude/skills/skill-catalog/scripts/extract_catalog.py -o ~/workshop/outputs/skill-lifecycle/skill-catalog.json
-2. Run: ~/.local/bin/python3 ~/.claude/skills/skill-graph/scripts/scan_skills.py --json -o ~/workshop/outputs/skill-lifecycle/skill-graph.json
+2. Run: ~/.local/bin/python3 ~/.claude/skills/skill-catalog/scripts/scan_skills.py --json -o ~/workshop/outputs/skill-lifecycle/skill-graph.json
 3. Run: ~/.local/bin/python3 ~/.claude/skills/skill-catalog/scripts/generate_viewer.py \
      --graph ~/workshop/outputs/skill-lifecycle/skill-graph.json \
      --catalog ~/workshop/outputs/skill-lifecycle/skill-catalog.json \

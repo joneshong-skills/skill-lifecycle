@@ -41,7 +41,7 @@ explorer (Haiku, maxTurns=10, tools: Read, Grep, Glob)
 | Audit | `skill-curator` | Scan for overlaps, run 3-agent panel, recommend merges/splits |
 | Optimize | `skill-optimizer` | Review flagged skills, gather evidence, apply targeted updates |
 | Publish | `skill-publisher` | Push to GitHub, generate READMEs, create logos |
-| Catalog | `skill-catalog` + `skill-graph` | Extract metadata, build relationship graph, generate HTML viewer |
+| Catalog | `skill-catalog` | Extract metadata, build relationship graph, generate HTML viewer |
 | Report | (built-in) | Summarize all changes across the pipeline |
 
 ## Prerequisites
@@ -61,7 +61,7 @@ If any are missing, inform the user and skip that phase (do not fail the entire 
 
 ### Phase 0: Initialize
 
-1. **Verify sub-skills** — Check that all four sub-skill directories exist (+ skill-graph for Catalog)
+1. **Verify sub-skills** — Check that all four sub-skill directories exist
 2. **Create run log** — Initialize a tracking structure to record results from each phase:
 
 ```
@@ -83,7 +83,7 @@ Pipeline: Audit → Optimize → Publish → Catalog → Report
 | 1. Audit | skill-curator | Pending |
 | 2. Optimize | skill-optimizer | Pending |
 | 3. Publish | skill-publisher | Pending |
-| 4. Catalog | skill-catalog + skill-graph | Pending |
+| 4. Catalog | skill-catalog | Pending |
 | 5. Report | lifecycle_report.py | Pending |
 
 Proceed? (y/n, or skip phases with: "skip audit", "skip publish", etc.)
@@ -208,7 +208,7 @@ Record results:
 - `logos_generated`: count
 - `publish_failures`: list of any failures
 
-### Phase 4: Catalog (skill-catalog + skill-graph)
+### Phase 4: Catalog (skill-catalog)
 
 Regenerate the full catalog and interactive graph to reflect all changes.
 
@@ -219,7 +219,7 @@ Use the /skill-catalog skill to regenerate the full skill catalog and graph.
 
 Steps:
 1. Run: ~/.local/bin/python3 ~/.claude/skills/skill-catalog/scripts/extract_catalog.py -o ~/workshop/outputs/skill-lifecycle/skill-catalog.json
-2. Run: ~/.local/bin/python3 ~/.claude/skills/skill-graph/scripts/scan_skills.py --json -o ~/workshop/outputs/skill-lifecycle/skill-graph.json
+2. Run: ~/.local/bin/python3 ~/.claude/skills/skill-catalog/scripts/scan_skills.py --json -o ~/workshop/outputs/skill-lifecycle/skill-graph.json
 3. Run: ~/.local/bin/python3 ~/.claude/skills/skill-catalog/scripts/generate_viewer.py \
      --graph ~/workshop/outputs/skill-lifecycle/skill-graph.json \
      --catalog ~/workshop/outputs/skill-lifecycle/skill-catalog.json \
