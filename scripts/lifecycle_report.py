@@ -5,13 +5,16 @@ Usage:
     python3 lifecycle_report.py \
         --run-id "lifecycle-20260212-143000" \
         --audit-merges 2 --audit-splits 0 --audit-retires 1 \
-        --sec-clean 9 --sec-warned 1 --sec-blocked 0 \
         --optimized 3 --unchanged 5 --changes 7 \
         --published 4 --repos-created 1 --readmes 4 --logos 2 \
         --total-skills 30 --total-edges 45 \
         [--skipped-phases "audit,publish"] \
         [--errors "optimize:timeout on skill-foo,publish:git auth failed"] \
+        [--note "catalog:ran the archived scan, 3358 edges"] ... \
         [-o ~/workshop/outputs/skill-lifecycle/lifecycle-report-20260228.md]
+
+--errors marks a phase FAILED and replaces its metrics. --note annotates a phase
+that still succeeded; it can repeat, and its message may contain commas.
 """
 
 from __future__ import annotations
@@ -58,6 +61,10 @@ def build_report(args: argparse.Namespace) -> str:
     """Build the full markdown report."""
     skipped = parse_list(args.skipped_phases)
     errors = dict(parse_key_value_list(args.errors))
+    notes = {}
+    for raw in args.note or []:
+        phase, _, message = raw.partition(":")
+        notes.setdefault(phase.strip(), []).append(message.strip())
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     lines = []
@@ -77,7 +84,6 @@ def build_report(args: argparse.Namespace) -> str:
 
     phases = [
         ("audit", "skill-curator", "—"),
-        ("security", "skill-security-scan", "HARD"),
         ("optimize", "skill-optimizer", "—"),
         ("publish", "skill-publisher", "—"),
         ("catalog", "skill-catalog", "—"),
@@ -102,28 +108,13 @@ def build_report(args: argparse.Namespace) -> str:
         lines.append(f"| Skills split | {args.audit_splits} |")
         lines.append(f"| Skills retired | {args.audit_retires} |")
         lines.append(f"| **Total actions** | **{total_audit_actions}** |")
-    lines.append("")
-
-    # Phase 2: Security Scan (HARD GATE)
-    lines.append("## Phase 2: Security Scan (HARD GATE)")
-    lines.append("")
-    if "security" in skipped:
-        lines.append("*Phase skipped by user.*")
-    elif "security" in errors:
-        lines.append(f"*Phase failed:* {errors['security']}")
-    else:
-        lines.append("| Metric | Count |")
-        lines.append("|--------|-------|")
-        lines.append(f"| Skills clean (PASS) | {args.sec_clean} |")
-        lines.append(f"| Skills warned (WARN) | {args.sec_warned} |")
-        lines.append(f"| Skills blocked (BLOCK) | {args.sec_blocked} |")
-        if args.sec_blocked > 0:
+        for message in notes.get("audit", []):
             lines.append("")
-            lines.append(f"**{args.sec_blocked} skill(s) BLOCKED** — removed from pipeline, require manual remediation.")
+            lines.append(f"*Note:* {message}")
     lines.append("")
 
-    # Phase 3: Optimize
-    lines.append("## Phase 3: Optimize")
+    # Phase 2: Optimize
+    lines.append("## Phase 2: Optimize")
     lines.append("")
     if "optimize" in skipped:
         lines.append("*Phase skipped by user.*")
@@ -135,10 +126,13 @@ def build_report(args: argparse.Namespace) -> str:
         lines.append(f"| Skills optimized | {args.optimized} |")
         lines.append(f"| Skills unchanged | {args.unchanged} |")
         lines.append(f"| Total changes applied | {args.changes} |")
+        for message in notes.get("optimize", []):
+            lines.append("")
+            lines.append(f"*Note:* {message}")
     lines.append("")
 
-    # Phase 4: Publish
-    lines.append("## Phase 4: Publish")
+    # Phase 3: Publish
+    lines.append("## Phase 3: Publish")
     lines.append("")
     if "publish" in skipped:
         lines.append("*Phase skipped by user.*")
@@ -151,10 +145,13 @@ def build_report(args: argparse.Namespace) -> str:
         lines.append(f"| New repos created | {args.repos_created} |")
         lines.append(f"| READMEs generated | {args.readmes} |")
         lines.append(f"| Logos generated | {args.logos} |")
+        for message in notes.get("publish", []):
+            lines.append("")
+            lines.append(f"*Note:* {message}")
     lines.append("")
 
-    # Phase 5: Catalog
-    lines.append("## Phase 5: Catalog")
+    # Phase 4: Catalog
+    lines.append("## Phase 4: Catalog")
     lines.append("")
     if "catalog" in skipped:
         lines.append("*Phase skipped by user.*")
@@ -165,6 +162,9 @@ def build_report(args: argparse.Namespace) -> str:
         lines.append("|--------|-------|")
         lines.append(f"| Total skills | {args.total_skills} |")
         lines.append(f"| Total edges | {args.total_edges} |")
+        for message in notes.get("catalog", []):
+            lines.append("")
+            lines.append(f"*Note:* {message}")
     lines.append("")
 
     # Summary
@@ -189,9 +189,6 @@ def build_report(args: argparse.Namespace) -> str:
         elif net < 0:
             lines.append(f"- **Net skill increase:** {abs(net)} (from splits)")
 
-    if "security" not in skipped and "security" not in errors and args.sec_blocked > 0:
-        lines.append(f"- **Skills blocked by security:** {args.sec_blocked} (require manual fix)")
-
     if "optimize" not in skipped and "optimize" not in errors and args.changes > 0:
         lines.append(f"- **Optimization changes:** {args.changes} across {args.optimized} skills")
 
@@ -209,7 +206,6 @@ def build_report(args: argparse.Namespace) -> str:
         lines.append("")
         retry_map = {
             "audit": "`/skill-curator`",
-            "security": "`python3 ~/.claude/skills/skill-security-scan/scripts/security-scan.py --batch`",
             "optimize": "`/skill-optimizer [skill-name]`",
             "publish": "`/skill-publisher --all`",
             "catalog": "`/skill-catalog`",
@@ -219,9 +215,18 @@ def build_report(args: argparse.Namespace) -> str:
                 lines.append(f"- {phase.capitalize()}: {retry_map[phase]}")
         lines.append("")
 
+    # Notes section
+    if notes:
+        lines.append("## Notes")
+        lines.append("")
+        for phase, messages in notes.items():
+            for message in messages:
+                lines.append(f"- **{phase.capitalize()}:** {message}")
+        lines.append("")
+
     # Footer
     lines.append("---")
-    lines.append("*Report generated by skill-lifecycle v0.4.0*")
+    lines.append("*Report generated by skill-lifecycle*")
 
     return "\n".join(lines)
 
@@ -236,7 +241,6 @@ def generate(run_id: str, **kwargs) -> str:
         report = lifecycle_report.generate(
             run_id='lifecycle-20260228-120000',
             audit_merges=2, audit_splits=0, audit_retires=1,
-            sec_clean=9, sec_warned=1, sec_blocked=0,
             optimized=3, unchanged=5, changes=7,
             published=4, repos_created=1, readmes=4, logos=2,
             total_skills=30, total_edges=45,
@@ -245,12 +249,13 @@ def generate(run_id: str, **kwargs) -> str:
     defaults = dict(
         run_id=run_id,
         audit_merges=0, audit_splits=0, audit_retires=0,
-        sec_clean=0, sec_warned=0, sec_blocked=0,
         optimized=0, unchanged=0, changes=0,
         published=0, repos_created=0, readmes=0, logos=0,
         total_skills=0, total_edges=0,
-        skipped_phases="", errors="",
+        skipped_phases="", errors="", note=[],
     )
+    if "notes" in kwargs:
+        kwargs["note"] = kwargs.pop("notes")
     defaults.update(kwargs)
 
     ns = argparse.Namespace(**defaults)
@@ -267,11 +272,6 @@ def main():
     parser.add_argument("--audit-merges", type=int, default=0, help="Skills merged in audit")
     parser.add_argument("--audit-splits", type=int, default=0, help="Skills split in audit")
     parser.add_argument("--audit-retires", type=int, default=0, help="Skills retired in audit")
-
-    # Security metrics
-    parser.add_argument("--sec-clean", type=int, default=0, help="Skills clean (PASS)")
-    parser.add_argument("--sec-warned", type=int, default=0, help="Skills with warnings (WARN)")
-    parser.add_argument("--sec-blocked", type=int, default=0, help="Skills blocked (BLOCK)")
 
     # Optimize metrics
     parser.add_argument("--optimized", type=int, default=0, help="Skills optimized")
@@ -291,6 +291,12 @@ def main():
     # Status
     parser.add_argument("--skipped-phases", default="", help="Comma-separated phases skipped")
     parser.add_argument("--errors", default="", help="phase:message pairs, comma-separated")
+    parser.add_argument(
+        "--note",
+        action="append",
+        default=[],
+        help="phase:message for a phase that succeeded with a caveat; repeatable, commas allowed",
+    )
 
     # Output
     parser.add_argument("-o", "--output", help="Output file path (default: stdout)")
