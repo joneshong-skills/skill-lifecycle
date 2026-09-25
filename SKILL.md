@@ -272,7 +272,9 @@ weekly cron writes to. Write the phase results to a JSON file next to the report
 Required keys: `trigger` (`manual`), `status`, `completed_at`, and `phases`, which is per-phase
 results plus `run` (local run id, real start time, report path; Anvil stamps its own run id and
 start time). Optional keys: `skipped_phases`, `total_skills`, `optimized`, `changes_applied`, and
-`errors`. A non-zero exit means nothing was recorded. Report that exit, not the markdown.
+`errors`. Any other key is refused, because Anvil would drop it silently. A non-zero exit means the
+run is not fully recorded; the message names a created-but-empty run_id if one exists. Report that
+exit, not the markdown.
 
 Present the report to the user and provide the file path.
 

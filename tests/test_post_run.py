@@ -16,7 +16,7 @@ SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "post_run.py"
 @pytest.fixture
 def anvil():
     calls = []
-    state = {"fail_patch": False}
+    state = {"fail_patch": False, "no_run_id": False}
 
     class Handler(BaseHTTPRequestHandler):
         def _body(self):
@@ -27,7 +27,8 @@ def anvil():
             calls.append(("POST", self.path, self._body()))
             self.send_response(201)
             self.end_headers()
-            self.wfile.write(json.dumps({"run_id": "lifecycle-srv-1"}).encode())
+            body = {} if state["no_run_id"] else {"run_id": "lifecycle-srv-1"}
+            self.wfile.write(json.dumps(body).encode())
 
         def do_PATCH(self):
             calls.append(("PATCH", self.path, self._body()))
@@ -106,3 +107,20 @@ def test_missing_required_fields_are_rejected_before_any_call(anvil, tmp_path):
     r = run(url, f)
     assert r.returncode != 0
     assert calls == []
+
+
+def test_unknown_fields_are_refused_before_any_call(anvil, tmp_path):
+    url, calls, _ = anvil
+    r = run(url, write_run(tmp_path, publishd=2))
+    assert r.returncode != 0
+    assert "publishd" in r.stderr
+    assert calls == []
+
+
+def test_a_create_response_without_run_id_exits_cleanly(anvil, tmp_path):
+    url, calls, state = anvil
+    state["no_run_id"] = True
+    r = run(url, write_run(tmp_path))
+    assert r.returncode == 1
+    assert "Traceback" not in r.stderr
+    assert [c[0] for c in calls] == ["POST"]

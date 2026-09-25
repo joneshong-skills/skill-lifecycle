@@ -5,8 +5,9 @@ Usage:
     post_run.py run.json [--anvil-url http://127.0.0.1:10301]
 
 run.json carries the LifecycleRunCreate/Update fields: trigger, skipped_phases,
-status, completed_at, total_skills, optimized, changes_applied, phases, errors
-(plus any other field the Anvil update model accepts). Anvil assigns run_id and
+status, completed_at, total_skills, optimized, changes_applied, phases, errors,
+and the test/sec counters. Any other key is refused before anything is sent,
+because Anvil silently drops fields its update model does not define. Anvil assigns run_id and
 started_at when the run is created, so put the local run id and real start time
 inside "phases".
 
@@ -24,6 +25,13 @@ import urllib.request
 from pathlib import Path
 
 REQUIRED = ("trigger", "status", "completed_at", "phases")
+# LifecycleRunCreate + LifecycleRunUpdate in stations/anvil/src/routes/lifecycle.py
+ALLOWED = {
+    "trigger", "skipped_phases", "status", "completed_at", "phases", "total_skills",
+    "test_passed", "test_partial", "test_failed", "sec_clean", "sec_warned", "sec_blocked",
+    "optimized", "changes_applied", "test_details", "security_details", "catalog_snapshot",
+    "errors",
+}
 
 
 def call(method: str, url: str, body: dict) -> dict:
@@ -48,6 +56,10 @@ def main() -> int:
     if missing:
         print(f"run file is missing: {', '.join(missing)}", file=sys.stderr)
         return 1
+    unknown = sorted(set(run) - ALLOWED)
+    if unknown:
+        print(f"Anvil would drop these fields: {', '.join(unknown)}", file=sys.stderr)
+        return 1
 
     base = f"{args.anvil_url.rstrip('/')}/api/anvil/lifecycle/runs"
     try:
@@ -63,7 +75,10 @@ def main() -> int:
         print(f"Anvil did not accept the run: {e}", file=sys.stderr)
         return 1
 
-    run_id = created["run_id"]
+    run_id = created.get("run_id")
+    if not run_id:
+        print(f"Anvil created no run_id: {created}", file=sys.stderr)
+        return 1
     update = {k: v for k, v in run.items() if k != "trigger"}
     try:
         call("PATCH", f"{base}/{run_id}", update)
