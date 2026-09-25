@@ -34,23 +34,7 @@ After audit completes, present recommendations with checkpoint options:
 
 Record: `skills_merged`, `skills_split`, `skills_retired`, `clusters_skipped`.
 
-## Phase 2: Security (skill-security-scan)
-
-```bash
-~/.local/bin/python3 ~/.claude/skills/skill-security-scan/scripts/security-scan.py --batch --json
-```
-
-| Result | Action |
-|--------|--------|
-| `PASS` | Skill proceeds to next phase |
-| `WARN` | Skill proceeds but warning logged in report |
-| `BLOCK` | Skill **removed from pipeline** — must be fixed manually first |
-
-BLOCKED skills do NOT proceed to Optimize or Publish.
-
-Record: `skills_clean`, `skills_warned`, `skills_blocked`.
-
-## Phase 3: Optimize (skill-optimizer)
+## Phase 2: Optimize (skill-optimizer)
 
 Candidate discovery:
 
@@ -86,7 +70,7 @@ Runs **sequentially** — each skill one at a time.
 
 Record: `skills_optimized`, `skills_unchanged`, `total_changes`.
 
-## Phase 4: Publish (skill-publisher)
+## Phase 3: Publish (skill-publisher)
 
 ```
 Use the /skill-publisher skill to publish the following skills: [list]
@@ -105,7 +89,7 @@ Output format — return:
 
 Record: `repos_created`, `repos_updated`, `readmes_generated`, `logos_generated`, `publish_failures`.
 
-## Phase 5: Catalog (skill-catalog)
+## Phase 4: Catalog (skill-catalog)
 
 ```
 Use the /skill-catalog skill to regenerate the full skill catalog and graph.
@@ -129,7 +113,7 @@ Output format — return:
 
 Record: `total_skills`, `total_edges`, `catalog_path`, `viewer_path`.
 
-## Phase 6: Report
+## Phase 5: Report
 
 Preferred (Sandbox):
 ```python
@@ -144,11 +128,11 @@ Fallback (Bash):
 ~/.local/bin/python3 ~/.claude/skills/skill-lifecycle/scripts/lifecycle_report.py \
   --run-id "lifecycle-YYYYMMDD-HHMMSS" \
   --audit-merges N --audit-splits N --audit-retires N \
-  --sec-clean N --sec-warned N --sec-blocked N \
   --optimized N --unchanged N --changes N \
   --published N --repos-created N --readmes N --logos N \
   --total-skills N --total-edges N \
   --skipped-phases "phase1,phase2" \
   --errors "phase:message,phase:message" \
+  --note "phase:message, commas allowed" \
   -o ~/.claude/outputs/skill-lifecycle/report.md
 ```

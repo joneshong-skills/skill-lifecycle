@@ -253,8 +253,13 @@ Generate the final lifecycle report summarizing all phases.
   --total-skills N --total-edges N \
   --skipped-phases "phase1,phase2" \
   --errors "phase:message,phase:message" \
+  --note "phase:message, commas allowed" \
   -o ~/workshop/outputs/skill-lifecycle/lifecycle-report-YYYYMMDD.md
 ```
+
+`--errors` marks a phase FAILED and replaces its metrics. A phase that succeeded with a caveat,
+such as a workaround or a manual step, gets `--note` instead. It keeps the phase OK and its numbers,
+and it can repeat.
 
 Present the report to the user and provide the file path.
 
